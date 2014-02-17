@@ -8,6 +8,7 @@ chomp $DATE;
 $LOGFNAME="NektoME_LOGS/$DATE";
 mkdir 'NektoME_LOGS/' unless -d 'NektoME_LOGS';
 open LOG, '>', $LOGFNAME;
+binmode(LOG, ':unix');
 print "Диалог сохранен в $LOGFNAME\n";
 
 sub err {
@@ -94,10 +95,7 @@ sub init {
 			last;
 		} else {
 			if($resp=~/^WAIT/){
-#				print "$resp\n";
-				$opp_id=substr($resp, 5);
-#				print "$my_id\n";
-#				print "$opp_id\n";
+				$opp_id=substr($resp, 5);\
 				$req="INIT $my_id $opp_id";
 			} else {
 				if($resp=~/^QUIT/) {
@@ -117,8 +115,11 @@ our $prefs=prefs;
 init;
 print "Ваш id: $my_id\nid собеседника: $opp_id\n";
 
+our $run = -1;
+
 if(our $kpid=fork){
 	while(1){
+		if($run!=-1){exit$run;}
 		my $resp=req("TYPE $my_id $opp_id\n0");
 		my $code=substr($resp, 0, 4);
 		if($code=~/MESS/){
@@ -130,17 +131,20 @@ if(our $kpid=fork){
 				print LOG "IN: <Отключился>\n";
 				print "\nСобеседник отключился.\n\nДля выхода пишем /quit.\n";
 				req("QUIT $my_id, $opp_id");
+				$run=0;
 				last;
 			}
+			flush LOG;
 		}
 	}
 } else {
 	while(1){
 		print "> ";
 		$msg = <>;
+		if($run!=-1){exit$run;}
 		chomp $msg;
 		if($msg=~/^$/){next;};
-		if($msg=~/^\/quit$/){sexit;};
+		if($msg=~/^\/quit$/){$run=0;sexit;};
 		if($msg=~/^\/stat$/){print req('STAT')."\n"; next;};
 		req("MESS $my_id, $opp_id, $msg");
 		print "Ваше сообщение отправлено.\n";
