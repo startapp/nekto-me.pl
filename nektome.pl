@@ -119,7 +119,7 @@ if(fork==0){
 		my $code=substr($resp, 0, 4);
 		if($code=~/MESS/){
 		my $mesg=substr($resp, 5);
-			print LOG 'IN: $msg\n';
+			print LOG "IN: $mesg\n";
 			print "\nВам пишут: $mesg\n> ";
 		} else {
 			if($code=~/QUIT/){
