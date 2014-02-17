@@ -95,7 +95,7 @@ sub init {
 			last;
 		} else {
 			if($resp=~/^WAIT/){
-				$opp_id=substr($resp, 5);\
+				$opp_id=substr($resp, 5);
 				$req="INIT $my_id $opp_id";
 			} else {
 				if($resp=~/^QUIT/) {
