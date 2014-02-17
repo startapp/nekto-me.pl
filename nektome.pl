@@ -18,12 +18,11 @@ sub err {
 sub sexit {
 	our $my_id;
 	our $opp_id;
-	our $RUN;
-	print "\nEXIT.\n";
+	our $kpid;
 	print LOG "OUT: <Отключился>\n";
 	req("QUIT $my_id $opp_id");
 	close LOG;
-	$RUN=0;
+	kill(0, $kpid);
 	exit(0);
 }
 
@@ -124,11 +123,8 @@ our $prefs=prefs;
 init;
 print "Ваш id: $my_id\nid собеседника: $opp_id\n";
 
-our $RUN=-1;
-
-if(fork==0){
+if(our $kpid=fork){
 	while(1){
-		if($RUN!=-1){exit $RUN;};
 		my $resp=req("TYPE $my_id $opp_id\n0");
 		my $code=substr($resp, 0, 4);
 		if($code=~/MESS/){
@@ -138,18 +134,20 @@ if(fork==0){
 		} else {
 			if($code=~/QUIT/){
 				print LOG 'IN: <Отключился>\n';
+				print "\nСобеседник отключился.\n";
 				req("QUIT $my_id, $opp_id");
 				sexit;
 			}
 		}
-		sleep(1);
 	}
 } else {
 	while(1){
-		if($RUN!=-1){exit $RUN;};
 		print "> ";
 		$msg = <>;
-#		$msg=join '',@msg;
+		chomp $msg;
+		if($msg=~/^$/){next;};
+		if($msg=~/^\/quit$/){sexit;};
+		if($msg=~/^\/stat$/){print req('STAT')."\n"; next;};
 		req("MESS $my_id, $opp_id, $msg");
 		print LOG "OUT: $msg\n";
 	}
