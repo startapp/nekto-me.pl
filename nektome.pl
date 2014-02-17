@@ -14,20 +14,14 @@ sub err {
 	die @_;
 }
 
-
 sub sexit {
 	our $my_id;
 	our $opp_id;
-	our $kpid;
 	print LOG "OUT: <Отключился>\n";
 	req("QUIT $my_id $opp_id");
 	close LOG;
-	kill(0, $kpid);
-	exit(0);
+	exit;
 }
-
-$SIG{INT} = \&sexit;
-$SIG{HUP} = \&sexit;
 
 #Генератор идентификатора.
 sub random_id {
@@ -133,10 +127,10 @@ if(our $kpid=fork){
 			print "\nВам пишут: $mesg\n> ";
 		} else {
 			if($code=~/QUIT/){
-				print LOG 'IN: <Отключился>\n';
-				print "\nСобеседник отключился.\n";
+				print LOG "IN: <Отключился>\n";
+				print "\nСобеседник отключился.\n\nДля выхода пишем /quit.\n";
 				req("QUIT $my_id, $opp_id");
-				sexit;
+				last;
 			}
 		}
 	}
@@ -149,6 +143,7 @@ if(our $kpid=fork){
 		if($msg=~/^\/quit$/){sexit;};
 		if($msg=~/^\/stat$/){print req('STAT')."\n"; next;};
 		req("MESS $my_id, $opp_id, $msg");
+		print "Ваше сообщение отправлено.\n";
 		print LOG "OUT: $msg\n";
 	}
 }
