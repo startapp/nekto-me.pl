@@ -43,22 +43,19 @@ sub random_id {
 #Отправляет запросы к серверу nekto.me.
 sub req {
 	my ($req) = $_[0];
+	our $prefs;
 	socket(SOCK, PF_INET, SOCK_STREAM, getprotobyname('tcp'));
 	connect(SOCK, sockaddr_in(80, inet_aton('nekto.me')));
-#	print "REQ: $req\n";
-	open($hf, "headertmpl.txt");
+	open($hf, "headers.txt");
 	$reqlength=(length $req);
-#	print "LENGTH: $reqlength\n";
-	while($l = <$hf>){$l=~s/\$CONTLEN/$reqlength/g; send(SOCK, $l, 0);}
+	while($l = <$hf>){
+		$l=~s/\$CONTLEN/$reqlength/g;
+		$l=~s/\$PREFS/$prefs/g;
+		send(SOCK, $l, 0);
+	}
 	send(SOCK, "$req\n", 0);
-#	@___resp=<SOCK>;
-#	$__resp=join '',@___resp;
-#	$__resp=~s/\r//g;
-#	@_resp=split "\n\n", $__resp;
-#	$resp=$_resp[1];
 	my $resp;
 	while($l=<SOCK>){
-#		print $l;
 		if($l=~/^Content\-Length\:/){
 			$clen = int(substr($l, 16));
 			<SOCK>;
@@ -67,9 +64,26 @@ sub req {
 		}
 	}
 	if($resp=~/^ERR/){err('Session error, request: '.$req);}
-#	print $resp."\n";
 	close(SOCK);
 	return $resp;
+}
+
+sub prefs {
+	print "Введите свои предпочтания:\n";
+	print "Ваш пол: \n\t1) Мужской\n\t2) Женский\n(1)> ";
+	$mg = <>;
+	chomp($mg);
+	print "Вы хотите пообщаться с: \n\t1) Мужчиной\n\t2) Женщиной\n(1)> ";
+	$yg = <>;
+	chomp($yg);
+	print "Ваш возраст: \n\t1) <=17\n\t2) 18..21\n\t3) 22..25\n\t4) 26..35\n\t5) >35\n(1)> ";
+	$ma = <>;
+	chomp($ma);
+	print "Возраст желаемого собеседника: \n\t1) <=17\n\t2) 18..21\n\t3) 22..25\n\t4) 26..35\n\t5) >35\n(1)> ";
+	$ya = <>;
+	chomp($ya);
+	print "Я учту, но ничего не обещаю ;-)\n\n";
+	return "$mg:$yg:$ma:$ya";
 }
 
 #Подключение..
@@ -106,7 +120,7 @@ sub init {
 our $my_id=random_id; #Мой id
 our $opp_id=''; #id собеседника
 print "Nekto.ME CLI\n";
-
+our $prefs=prefs;
 init;
 print "Ваш id: $my_id\nid собеседника: $opp_id\n";
 
