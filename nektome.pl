@@ -3,9 +3,33 @@
 use Socket;
 use Data::Dumper;
 
+$DATE=`date +%d.%m.%y\_%H:%M:%S`;
+chomp $DATE;
+$LOGFNAME="NektoME_LOGS/$DATE";
+mkdir 'NektoME_LOGS/' unless -d 'NektoME_LOGS';
+open LOG, '>', $LOGFNAME;
+print "Диалог сохранен в $LOGFNAME\n";
+
 sub err {
 	die @_;
 }
+
+
+sub sexit {
+	our $my_id;
+	our $opp_id;
+	our $RUN;
+	print "\nEXIT.\n";
+	print LOG "OUT: <Отключился>\n";
+	req("QUIT $my_id $opp_id");
+	close LOG;
+	$RUN=0;
+	exit(0);
+}
+
+$SIG{INT} = \&sexit;
+$SIG{HUP} = \&sexit;
+
 #Генератор идентификатора.
 sub random_id {
 	my $random_string;
@@ -59,7 +83,7 @@ sub init {
 		sleep(1);
 		if($resp=~/^INIT/){
 			$opp_id=substr($resp, 5);
-			print ' Ок\n';
+			print " Ок\n";
 			last;
 		} else {
 			if($resp=~/^WAIT/){
@@ -70,7 +94,7 @@ sub init {
 				$req="INIT $my_id $opp_id";
 			} else {
 				if($resp=~/^QUIT/) {
-				print "No carrier.dctgbpltw\nСобеседник отключился.\n";
+				print "No carrier.dctgbpltw.\n";
 				} else {
 					err("Unknown response from server: $resp");}
 				}
@@ -86,24 +110,34 @@ print "Nekto.ME CLI\n";
 init;
 print "Ваш id: $my_id\nid собеседника: $opp_id\n";
 
-if(fork){
+our $RUN=-1;
+
+if(fork==0){
 	while(1){
+		if($RUN!=-1){exit $RUN;};
 		my $resp=req("TYPE $my_id $opp_id\n0");
 		my $code=substr($resp, 0, 4);
-		my $mesg=substr($resp, 5);
 		if($code=~/MESS/){
+		my $mesg=substr($resp, 5);
+			print LOG 'IN: $msg\n';
 			print "\nВам пишут: $mesg\n> ";
+		} else {
+			if($code=~/QUIT/){
+				print LOG 'IN: <Отключился>\n';
+				req("QUIT $my_id, $opp_id");
+				sexit;
+			}
 		}
-		#print "$code $mesg\n";
 		sleep(1);
 	}
 } else {
 	while(1){
+		if($RUN!=-1){exit $RUN;};
 		print "> ";
 		$msg = <>;
 #		$msg=join '',@msg;
 		req("MESS $my_id, $opp_id, $msg");
-#		req($msg);
+		print LOG "OUT: $msg\n";
 	}
 }
 
