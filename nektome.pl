@@ -146,7 +146,7 @@ if(our $kpid=fork){
 		if($msg=~/^$/){next;};
 		if($msg=~/^\/quit$/){$run=0;sexit;};
 		if($msg=~/^\/stat$/){print req('STAT')."\n"; next;};
-		req("MESS $my_id, $opp_id, $msg");
+		req("MESS $my_id $opp_id\n$msg");
 		print "Ваше сообщение отправлено.\n";
 		print LOG "OUT: $msg\n";
 	}
