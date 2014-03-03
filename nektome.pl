@@ -1,7 +1,6 @@
 #!/usr/bin/perl
 
 use Socket;
-use Data::Dumper;
 
 $DATE=`date +%d.%m.%y\_%H:%M:%S`;
 chomp $DATE;
@@ -111,6 +110,7 @@ sub init {
 our $my_id=random_id; #Мой id
 our $opp_id=''; #id собеседника
 print "Nekto.ME CLI\n";
+print "В сети ".substr(req("STAT"), 5)." человек.\n";
 our $prefs=prefs;
 init;
 print "Ваш id: $my_id\nid собеседника: $opp_id\n";
